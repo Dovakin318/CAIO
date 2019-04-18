@@ -1,312 +1,254 @@
-# This version downgrade is for testing purpose only
-sed -ri "s/versionCode=(.*)/versionCode=140/" $TMPDIR/module.prop 2>/dev/null
-
 # Variables
 CUS=$TMPDIR/custom
-DFO=$ORIGDIR/system/etc/device_features/$DEVCODE.xml
-DFM=$UNITY/system/etc/device_features/$DEVCODE.xml
+DFO=$ORIGDIR/system/etc/device_features/"$DEVCODE".xml
+DFM=$TMPDIR/$MODID/system/etc/device_features/"$DEVCODE".xml
 ROM=$(grep_prop ro.build.display.id | cut -d'-' -f1)
 SYSCAM=$(find $ORIGDIR/system/priv-app -type d -name "*MiuiCamera*" | head -n1)
+PERMS=$TMPDIR/$MODID/system/etc/default-permissions/miuicamera-permissions.xml
 
 # Description edit
 DEDIT() {
   sed -ri "s/description=(.*)/description=\1 $1/" $TMPDIR/module.prop 2>/dev/null
 }
 
-# Additional MIUI Camera features
-TAMBAL() {
-  V=$(cat $DFM | grep -nw $1 | cut -d'>' -f2 | cut -d'<' -f1 | head -n1)
-  W=$(cat $DFM | grep -nw $1 | cut -d':' -f1 | head -n1)
-  X=$(($W - 1))
-  Y=$(($(cat $DFM | grep -n '<bool' | tail -n2 | head -n1 | cut -d: -f1) + $X))
-  if [ ! "$X" == "-1" ]; then
-    if [ ! "$V" == "$2" ]; then
-      sed -i "$W s/$V/$2/" $DFM 2>/dev/null;
-      sed -i "$X a\    <!-- Modified by $MODID -->" $DFM 2>/dev/null
-    else
-      return 1
-    fi  
-  else
-    sed -i "$Y a\    <bool name=\"$1\">$2</bool>" $DFM 2>/dev/null
-    sed -i "$(($Y + $X)) a\    <!-- Added by $MODID -->" $DFM 2>/dev/null
-  fi
-}
-
-# Install stuffs
-GORENG() {
-  for L in $(find $TMPDIR/$1 -type f -name "*.*");
-  do
-    # [ ! -d $UNITY/system/$2 ] && mkdir -p $UNITY/system/$2 2>/dev/null
-    cp_ch $L $UNITY/system/$2/$(basename $L) 2>/dev/null
-  done
-}
-
-
-# Clean-up app data
-BERSIHIN() {
-
-  ui_print " "
-  ui_print "- Cleaning up old data -"
-  for b in $(find /data -name "*MiuiCamera*" -o -name "*com.android.camera*"); 
-  do
-      [ "$(echo $b | cut -d'/' -f-4)" == "/data/media/0" ] && continue
-      [ "$(echo $b | cut -d'/' -f-4)" == "/data/adb/modules" ] && continue
-      [ "$(echo $b | cut -d'/' -f-4)" == "/data/adb/modules_update" ] && continue
-      if [ -d "$b" ]; then
-          rm -rf $b 2>/dev/null
-      else
-          rm -f $b 2>/dev/null
-      fi
+# Install stuffs with ease
+PUSHME() {
+  OUT=$(find $TMPDIR/$1 -type f -name "*.*")
+  for FILE in $OUT; do
+     DEST=$CUS/$MODID/system/$2/$(basename $FILE)
+     #[ ! -d $(dirname $DEST) ] && mkdir -p $(dirname $DEST)
+     cp_ch -rf $FILE $DEST 2>/dev/null
   done
 }
 
 # Basic patches
 BASIC() {
   ui_print " "
-  ui_print "  Decompressing base files..."
+  ui_print "  Extracting $MODID base files..."
   unzip -oq $CUS/Base.zip -d $TMPDIR 2>/dev/null
-  unzip -oq $CUS/Encoder.zip -d $TMPDIR 2>/dev/null
-  DEDIT "Applied:"
+  unzip -oq $CUS/device_features.zip -d $CUS 2>/dev/null
+  if [ "$PROPFILE" == $CUS/aosplos.prop ]; then
+    DEDIT "Applied: Google Camera stuffs, smoother video encoder, Pixel 2018 sysconfig, "
+  else
+    DEDIT "Applied: Google Camera stuffs, Pixel 2018 sysconfig, "
+  fi
   
   ui_print " "
-  ui_print "- Enable EIS? -"
-  ui_print "  Vol+ (Up)   = Yes"
-  ui_print "  Vol- (Down) = No"
+  ui_print "- Disable EIS? -"
+  ui_print "  Vol+ (Yes)  /  Vol- (No)"
+  ui_print " "
   if $VKSEL; then
+    ui_print "  > EIS Disabled"
     EIS=true
-    ui_print "  > EIS enabled"
   else
+    ui_print "  > EIS Enabled"
     EIS=false
-    ui_print "  > EIS disabled"
-  fi
-
-  if [ $API -ge 28 ]; then
-    ui_print " "
-    ui_print "- Patch video encoder? -"
-    ui_print "  Vol+ (Up)   = Yes"
-    ui_print "  Vol- (Down) = No"
-    if $VKSEL; then
-      ui_print "  > Encoder patched"
-      ENC=true
-    else
-      ENC=false
-      ui_print "  > Encoder not patched"
-    fi
-  else
-    ui_print "  ! Encoder patch is not applicable on SDK $API, skipping !"
   fi
   
   ui_print " "
-  ui_print "- Enable Gimmick AI (selfie, square and portrait)? -"
-  ui_print "  Vol+ (Up)   = Yes"
-  ui_print "  Vol- (Down) = Ignore, i know its useless"
+  ui_print "- Disable Gimmick AI (selfie, square and portrait)? -"
+  ui_print "  Vol+ (Yes)  /  Vol- (No)"
+  ui_print " "
   if $VKSEL; then
-      ui_print "  > Enabled"
-      sed -i '3 s/false/true/' $CUS/features.txt
-      sed -i '5 s/false/true/' $CUS/features.txt
-      sed -i '10 s/false/true/' $CUS/features.txt
+    ui_print "  > Gimmick AI disabled"
   else
-      ui_print "  > Ignored"
-  fi
-  
-  if [ -f $DFO ]; then
-  ui_print " "
-  ui_print "- $ROM have $DEVCODE.xml -"
-  ui_print "  Vol+ (Up)   = Use $ROM provided"
-  ui_print "  Vol- (Down) = Use $MODID provided"
-    if $VKSEL; then
-      ui_print "  > Using $DEVCODE.xml from $ROM"
-      cp_ch $DFO $DFM 2>/dev/null
-    else
-      ui_print "  > Using $DEVCODE.xml from $MODID "
-      cp_ch $CUS/$DEVCODE.xml $DFM 2>/dev/null
-    fi
-  else
-    ui_print " "
-    ui_print "- $ROM have no MIUI features, using $MODID provided -"
-    cp_ch $CUS/$DEVCODE.xml $DFM 2>/dev/null
-  fi
-}
-
-# Additional AOSP/LOS patches
-AOSPLOS() {
-  ui_print " "
-  ui_print "  Decompressing AOSP/LOS files..."
-  unzip -oq $CUS/lib.zip -d $TMPDIR 2>/dev/null
-  unzip -oq $CUS/lib64.zip -d $TMPDIR 2>/dev/null
-  unzip -oq $CUS/GCam.zip -d $TMPDIR 2>/dev/null
-  unzip -oq $CUS/Mutes.zip -d $TMPDIR 2>/dev/null
-  sleep 3
-  
-  ui_print " "
-  ui_print "- Which MIUI Camera you want to install? -"
-  ui_print "  Vol+ (Up)   = AI Part7 MIUI Camera"
-  ui_print "  Vol- (Down) = Mi A2 or Mi A1 Stock MIUI Camera"
-  if $VKSEL; then
-    APK="Part7"
-  else
-    ui_print " "
-    ui_print "  Vol+ (Up)   = Mi A2 Stock Camera "
-    ui_print "  Vol- (Down) = Mi A1 Stock Camera"
-    if $VKSEL; then
-      APK="MiA2"
-    else
-      APK="MiA1"
-    fi
-  fi
-  ui_print "  > $APK MIUI Camera selected"
-  
-  if [ $DEVCODE == "tulip" ] || [ $DEVCODE == "wayne" ] || [ $DEVCODE == "whyred" ]; then
-    ui_print " "
-    ui_print "- Apply seemless GCam 4K60 recording ? -"
-    ui_print "  Vol+ (Up)   = Yes"
-    ui_print "  Vol- (Down) = No"
-    if $VKSEL; then
-      ui_print "  > Applied GCam 4K60 patch"
-      FOURK=true
-    else
-      ui_print "  > GCam 4K60 not applied"
-      FOURK=false
-    fi
-  else
-    ui_print "  ! GCam 4K60 CANNOT be applied to your $DEVNAME ($DEVCODE) !"
-    FOURK=false
-  fi
-
-  ui_print " "
-  ui_print "- Apply mute MIUI Camera sounds ? -"
-  ui_print "  Vol+ (Up)   = Yes"
-  ui_print "  Vol- (Down) = No"
-  if $VKSEL; then
-     ui_print "  > Mute camera sounds applied"
-     ui_print "  ! Uncheck \"Camera Sounds\" from MIUI Camera settings"
-     MUTE=true
-  else
-     ui_print "  > Mute camera sounds not applied"
-     MUTE=false
-  fi
-
-  ui_print " "
-  ui_print "- Apply system-wide lib? -"
-  ui_print "  Vol+ (Up)   = Yes"
-  ui_print "  Vol- (Down) = No (Recommended)"
-  if $VKSEL; then
-      ui_print "  > Applied to system-wide"
-      SWLIB=true
-  else
-      ui_print "  > Applied to app only"
-      SWLIB=false
-  fi
- 
-  if [ -n "$SYSCAM" ]; then
-    if $BOOTMODE; then
-      INSNAME=$(echo $SYSCAM | cut -d'/' -f7)
-    else
-      INSNAME=$(echo $SYSCAM | cut -d'/' -f4)
-    fi
-    ui_print " "
-    ui_print "- $INSNAME installed, replacing -"
-    mktouch $UNITY/system/priv-app/$INSNAME/.replace 2>/dev/null
-    DEDIT "replace MIUI Camera with $APK, "
-  else
-    ui_print " "
-    ui_print "- No MIUI Camera installed -"
-    if [ ! "$APK" == "Part7" ]; then
-      ui_print " "
-      ui_print "  [Note]: Manually grant permission for MIUI Camera "
-      sleep 3
-    fi
-    INSNAME=MiuiCamera
-    DEDIT "install MIUI Camera from $APK, "
-    cp_ch $CUS/perms.xml $UNITY/system/etc/permissions/privapp-permissions-miuicamera.xml 2>/dev/null
-  fi
-  
-  ui_print " "
-  ui_print "- Processing AOSP/LOS patches -"
-  BERSIHIN
-  cp_ch $CUS/$APK.apk $UNITY/system/priv-app/$INSNAME/$INSNAME.apk 2>/dev/null
-  GORENG "lib" "priv-app/$INSNAME/lib/arm"
-  GORENG "lib64" "priv-app/$INSNAME/lib/arm64"
-  
-  if [ ! "$APK" == "Part7" ]; then
-    unzip -oq $CUS/oat.zip -d $TMPDIR 2>/dev/null
-    cp_ch -r $TMPDIR/oat $UNITY/system/priv-app/$INSNAME/oat 2>/dev/null
-  fi
-  
-  cp_ch $CUS/model.dlc $UNITY/system/vendor/etc/camera/model_back.dlc 2>/dev/null
-  
-  if $SWLIB; then
-    GORENG "lib64" "lib64"
-    GORENG "lib64" "vendor/lib64"
-    sleep 3
-  fi
-  
-  if $MUTE; then
-    DEDIT "mute camera sounds, "
-    GORENG "Mutes" "media/audio/ui"
-    GORENG "Mutes" "product/media/audio/ui"
-  fi
-  
-  if $FOURK; then
-    DEDIT "seemless GCam 4K60 recording, "
-    GORENG "GCam" "vendor/lib"
+    ui_print "  > Gimmick AI enabled"
+    DEDIT "Gimmick AI,"
+    sed -i '3 s/false/true/' $CUS/features.txt 2>/dev/null
+    sed -i '5 s/false/true/' $CUS/features.txt 2>/dev/null
+    sed -i '10 s/false/true/' $CUS/features.txt 2>/dev/null
   fi
 }
 
 ui_print " "
 ui_print "- Detecting ROM -"
-if $MAGISK; then
-  if [ -f /system/priv-app/MiuiSystemUI/MiuiSystemUI.apk ]; then
-    ui_print " "
-    ui_print "- $ROM is MIUI based -"
-    ui_print "- AOSP/LOS patches will be ignored -"
-    sed -ri "s/name=(.*)/name=\1 for MIUI/" $TMPDIR/module.prop 2>/dev/null
-    prop_process $CUS/miui.prop
-    BASIC
-    DEDIT "seemless GCam 4K60 recording, "
-  else
-    ui_print " "
-    ui_print "- $ROM is AOSP/LOS based -"
-    sed -ri "s/name=(.*)/name=\1 for AOSP\/LOS/" $TMPDIR/module.prop 2>/dev/null
-    prop_process $CUS/aosplos.prop
-    BASIC
-    AOSPLOS
-  fi
-  
-  if $EIS; then
-    DEDIT "EIS enabled, "
-    sed -i "s/eis.enable=0/eis.enable=1/g" $CUS/aosplos.prop
-    sed -i "s/eis.enable=0/eis.enable=1/g" $CUS/miui.prop
-  else
-    DEDIT "EIS disabled, "
-  fi
-  
-  if $ENC; then
-    DEDIT "video encoder patch, "
-    GORENG "Encoder" "lib"
-    GORENG "Encoder" "vendor/lib"
-  fi
-  
-  if [ -f $DFM ]; then
-    ui_print " "
-    ui_print "- Patching $DEVCODE.xml -"
-    DEDIT "and patch $DEVCODE.xml"
-    while IFS= read -r I N; do
-      TAMBAL $I $N
-    done <"$CUS/features.txt"
-  else
-    abort "  ! Failed to extract files !"
-  fi
+if [ -f /system/priv-app/MiuiSystemUI/MiuiSystemUI.apk ]; then
+  ui_print " "
+  ui_print "- $ROM is MIUI based -"
+  ui_print "- AOSP/LOS patches will be skipped -"
+  MIUI=true
 else
-  abort "  ! $MODID only for Magisk !"
+  ui_print " "
+  ui_print "- $ROM is AOSP/LOS based -"
+  MIUI=false
 fi
 
+if $MIUI; then
+  # Weird MemeUi Camera2API file placement
+  sed -i "s/Mi 6X/$DEVNAME/g" $TMPDIR/custom/miui.prop
+  sed -ri "s/name=(.*)/name=\1 for MIUI/" $TMPDIR/module.prop
+  BASIC
+  DEDIT "Seamless GCam 4K60 recording,"
+  cp -f $DFO $DFM 2>/dev/null
+  cp_ch -r $TMPDIR/$MODID$VEN/etc/permissions $UNITY$SYS/etc/permissions
+  PROPFILE=$CUS/miui.prop
+else
+  sed -i "s/Mi 6X/$DEVNAME/g" $TMPDIR/custom/aosplos.prop
+  sed -ri "s/name=(.*)/name=\1 for AOSP\/LOS/" $TMPDIR/module.prop
+  PROPFILE=$CUS/aosplos.prop
+  BASIC
+  
+  # Additional AOSP/LOS features
+  ui_print " "
+  ui_print "- Which MIUI Camera you want to install? -"
+  ui_print "  Vol+ (Up)   =  MIUI Camera v2 from Part7"
+  ui_print "  Vol- (Down) = Stock Mi A2 or Mi A1 MIUI Camera"
+  if $VKSEL; then
+    MICAM="Part7"
+  else
+    ui_print " "
+    ui_print "  Vol+ (Mi A2)  /  Vol- (Mi A1)"
+    if $VKSEL; then
+      MICAM="MiA2"
+    else
+      MICAM="MiA1"
+    fi
+  fi
+  ui_print " "
+  ui_print "  > MIUI Camera from $MICAM selected -"
+  
+  ui_print " "
+  ui_print "- Where to apply libraries ? -"
+  ui_print "  Vol+ (Up)   = Priv-App only (Recommended)"
+  ui_print "  Vol- (Down) = System-wide (Only if you have problem)"
+  ui_print " "
+  if $VKSEL; then
+    ui_print "  > Selected priv-app only"
+    LIBS=false
+  else
+    ui_print "  > Selected system-wide"
+    LIBS=true
+  fi
+  
+  if $GCAM; then
+    ui_print " "
+    ui_print "- Additional Google Camera patch available for your $DEVNAME -"
+    ui_print "  Vol+ (Skip)  /  Vol- (Apply) "
+    ui_print " "
+    if $VKSEL; then
+      ui_print "  > Skipped Ancient Family patches"
+      GCAM=false
+    else
+      ui_print "  > Applied Ancient Family patches"
+      GCAM=true
+    fi
+  else
+    # in case aja
+    GCAM=false
+  fi
+  # End of AOSP/LOS selection
+  
+  # Find system MIUI Camera
+  # Some ROM uses different priv-app folder, this unf is the answer.
+  if [ -d "$SYSCAM" ]; then
+    case $BOOTMODE in
+      true) SYSCAM=$(echo $SYSCAM | cut -d'/' -f7);;
+      false) SYSCAM=$(echo $SYSCAM | cut -d'/' -f4);;
+    esac
+    ui_print " "
+    ui_print "- $SYSCAM installed, replacing -"
+    DEDIT "Replace MIUI Camera with $MICAM,"
+    sed -i "s/true/false/g" $PERMS 2>/dev/null
+    mktouch $UNITY$SYS/priv-app/"$SYSCAM"/.replace
+  else
+    DEDIT "Install MIUI Camera from $MICAM,"
+    case $MICAM in
+      Mi*) ui_print " ";
+           ui_print "  [Note]: MANUALLY assign ($MICAM) MIUI Camera permission";
+           sleep 3;;
+    esac
+  fi
+  
+  # AOSP Installations
+  unzip -oq $CUS/AOSP.zip -d $TMPDIR 2>/dev/null
+  unzip -oq $CUS/lib64.zip -d $TMPDIR 2>/dev/null
+  
+  # Ancient fam patches
+  if $GCAM; then
+    DEDIT "Ancient Family camera patches,"
+    sed -ri "s/author=(.*)/author=\1, Ancient Family/" $TMPDIR/module.prop
+    unzip -oq $CUS/Ancient.zip -d $TMPDIR/$MODID 2>/dev/null
+  fi
+  
+  # Device specific patches
+  if [ -f $CUS/"$DEVCODE".zip ]; then
+    unzip -oq $CUS/"$DEVCODE".zip -d $TMPDIR/$MODID 2>/dev/null
+  else
+    case $DEVCODE in
+     jasmine) unzip -oq $CUS/jasmine_sprout.zip -d $TMPDIR/$MODID 2>/dev/null;;
+    esac
+  fi
+
+  # MIUI Camera and its libs installation
+  # BERSIHIN
+  cp_ch $CUS/"$MICAM".apk $UNITY$SYS/priv-app/MiuiCamera/MiuiCamera.apk
+  if $LIBS; then
+    PUSHME "lib64" "lib64"
+    PUSHME "lib64" "priv-app/MiuiCamera/lib/arm64"
+  else
+    PUSHME "lib64" "priv-app/MiuiCamera/lib/arm64"
+  fi
+fi
+  
+# MIUI features patching
+[ ! -f $DFM ] && abort "  ! $DEVCODE.xml not found !"
 ui_print " "
-ui_print "   **********************************************"
-ui_print "   *           [!!] IF BOOTLOOP [!!]            *"
-ui_print "   **********************************************"
-ui_print "   *         Please reflash this module         *"
-ui_print "   *            FROM RECOVERY/TWRP              *"
-ui_print "   **********************************************"
+ui_print "- Patching $DEVNAME MIUI features -"
+while read -r NAME VAL; do 
+# UnFaedah vars
+OVAL=$(cat $DFM | grep -nw "$NAME" | cut -d'>' -f2 | cut -d'<' -f1 | head -n1)
+ONUM=$(cat $DFM | grep -nw "$NAME" | cut -d':' -f1 | head -n1)
+  case $OVAL in
+    $VAL) continue;;
+          #ui_print " Exist  : $NAME = [$VAL]";
+  esac
+  if [ -n "$OVAL" ]; then
+    #ui_print " Changed: $NAME -- [$OVAL] => [$VAL]"
+    sed -i "$ONUM s/$OVAL/$VAL/" $DFM
+    sed -ri "$(($ONUM - 1)) s/<!--(.*)/<!-- $MODID changed \"$OVAL\" to \"$VAL\" -->/" $DFM
+  else
+    #ui_print " Added  : $NAME -- [$VAL]"
+    sed -i "/<features>/ a\    <bool name=\"$NAME\">$VAL</bool>" $DFM
+    sed -i "/<features>/ a\    <!-- $MODID added $NAME -->" $DFM
+  fi
+done <"$CUS/features.txt"
+
+if $EIS; then
+    DEDIT "Disable EIS,"
+else
+    DEDIT "Enable EIS,"
+    sed -i "s/eis.enable=0/eis.enable=1/g" $CUS/aosplos.prop
+    sed -i "s/eis.enable=0/eis.enable=1/g" $CUS/miui.prop
+fi
+
+# Version downgrade in case we need to change features
 ui_print " "
-sleep 5
+ui_print "   Do you need to change $MODID options?"
+ui_print "   Vol+ (No)  /  Vol- (Yes)"
+ui_print " "
+if $VKSEL; then
+  ui_print "   **********************************************"
+  ui_print "   *           [!!] IF BOOTLOOP [!!]            *"
+  ui_print "   **********************************************"
+  ui_print "   *         Please reflash this module         *"
+  ui_print "   *            FROM RECOVERY/TWRP              *"
+  ui_print "   **********************************************"
+  sleep 5
+else
+  ui_print "   *  Now you can reflash this zip again and    *"
+  ui_print "   *  change anything you need                  *"
+  sed -ri "s/versionCode=(.*)/versionCode=100/" $TMPDIR/module.prop 2>/dev/null
+fi
+
+# Finale
+if [ -d $TMPDIR/$MODID$SYS ] || [ -f $DFM ]; then
+  ui_print " "
+  ui_print "- Processing $MODID files "
+  DEDIT "and patch $DEVCODE MIUI features."
+  cp_ch -r $TMPDIR/$MODID$SYS $UNITY$SYS
+  prop_process "$PROPFILE"
+else
+  unity_uninstall
+  abort "! Failed to extract files"
+fi
+ui_print " "
