@@ -11,16 +11,6 @@ DEDIT() {
   sed -ri "s/description=(.*)/description=\1 $1/" $TMPDIR/module.prop 2>/dev/null
 }
 
-# Install stuffs with ease
-PUSHME() {
-  OUT=$(find $TMPDIR/$1 -type f -name "*.*")
-  for FILE in $OUT; do
-     DEST=$CUS/$MODID/system/$2/$(basename $FILE)
-     #[ ! -d $(dirname $DEST) ] && mkdir -p $(dirname $DEST)
-     cp_ch -rf $FILE $DEST 2>/dev/null
-  done
-}
-
 # Basic patches
 BASIC() {
   ui_print " "
@@ -28,9 +18,9 @@ BASIC() {
   unzip -oq $CUS/Base.zip -d $TMPDIR 2>/dev/null
   unzip -oq $CUS/device_features.zip -d $CUS 2>/dev/null
   if [ "$PROPFILE" == $CUS/aosplos.prop ]; then
-    DEDIT "Applied: Google Camera stuffs, smoother video encoder, Pixel 2018 sysconfig, "
+    DEDIT "Applied: "
   else
-    DEDIT "Applied: Google Camera stuffs, Pixel 2018 sysconfig, "
+    DEDIT "Applied: "
   fi
   
   ui_print " "
@@ -91,7 +81,7 @@ else
   # Additional AOSP/LOS features
   ui_print " "
   ui_print "- Which MIUI Camera you want to install? -"
-  ui_print "  Vol+ (Up)   =  MIUI Camera v2 from Part7"
+  ui_print "  Vol+ (Up)   = MIUI Camera v2 from AI Part7"
   ui_print "  Vol- (Down) = Stock Mi A2 or Mi A1 MIUI Camera"
   if $VKSEL; then
     MICAM="Part7"
@@ -107,29 +97,16 @@ else
   ui_print " "
   ui_print "  > MIUI Camera from $MICAM selected -"
   
-  ui_print " "
-  ui_print "- Where to apply libraries ? -"
-  ui_print "  Vol+ (Up)   = Priv-App only (Recommended)"
-  ui_print "  Vol- (Down) = System-wide (Only if you have problem)"
-  ui_print " "
-  if $VKSEL; then
-    ui_print "  > Selected priv-app only"
-    LIBS=false
-  else
-    ui_print "  > Selected system-wide"
-    LIBS=true
-  fi
-  
   if $GCAM; then
     ui_print " "
     ui_print "- Additional Google Camera patch available for your $DEVNAME -"
     ui_print "  Vol+ (Skip)  /  Vol- (Apply) "
     ui_print " "
     if $VKSEL; then
-      ui_print "  > Skipped Ancient Family patches"
+      ui_print "  > Skipped Google Camera patches"
       GCAM=false
     else
-      ui_print "  > Applied Ancient Family patches"
+      ui_print "  > Applied Google Camera patches"
       GCAM=true
     fi
   else
@@ -163,11 +140,10 @@ else
   unzip -oq $CUS/AOSP.zip -d $TMPDIR 2>/dev/null
   unzip -oq $CUS/lib64.zip -d $TMPDIR 2>/dev/null
   
-  # Ancient fam patches
+  # Additional Google Camera patches
   if $GCAM; then
-    DEDIT "Ancient Family camera patches,"
-    sed -ri "s/author=(.*)/author=\1, Ancient Family/" $TMPDIR/module.prop
-    unzip -oq $CUS/Ancient.zip -d $TMPDIR/$MODID 2>/dev/null
+    DEDIT "Seamless GCam 4k60 video recording,"
+    unzip -oq $CUS/GCam.zip -d $TMPDIR/$MODID 2>/dev/null
   fi
   
   # Device specific patches
@@ -179,15 +155,9 @@ else
     esac
   fi
 
-  # MIUI Camera and its libs installation
-  # BERSIHIN
+  # Install MIUI Camera
+  # Lib64 has been moved to priv-app due to system stability 
   cp_ch $CUS/"$MICAM".apk $UNITY$SYS/priv-app/MiuiCamera/MiuiCamera.apk
-  if $LIBS; then
-    PUSHME "lib64" "lib64"
-    PUSHME "lib64" "priv-app/MiuiCamera/lib/arm64"
-  else
-    PUSHME "lib64" "priv-app/MiuiCamera/lib/arm64"
-  fi
 fi
   
 # MIUI features patching

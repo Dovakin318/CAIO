@@ -46,10 +46,9 @@ unity_custom() {
   # Supported devices
   case $DEVCODE in
    jasmine*) LANJUT=true;;
-  lavender*) LANJUT=true;;
-     tulip*) LANJUT=true; GCAM=true;;
-     wayne*) LANJUT=true; GCAM=true;;
-    whyred*) LANJUT=true; GCAM=true;;
+      tulip) LANJUT=true; GCAM=true;;
+      wayne) LANJUT=true; GCAM=true;;
+     whyred) LANJUT=true; GCAM=true;;
   esac
   
   # Correct MI with Mi 😂
