@@ -1,10 +1,11 @@
 # Variables
 CUS=$TMPDIR/custom
+CAIOSYS=$TMPDIR/$MODID/system
 DFO=$ORIGDIR/system/etc/device_features/"$DEVCODE".xml
 DFM=$TMPDIR/$MODID/system/etc/device_features/"$DEVCODE".xml
 ROM=$(grep_prop ro.build.display.id | cut -d'-' -f1)
 SYSCAM=$(find $ORIGDIR/system/priv-app -type d -name "*MiuiCamera*" | head -n1)
-PERMS=$TMPDIR/$MODID/system/etc/default-permissions/miuicamera-permissions.xml
+PERMS=$CAIOSYS/etc/default-permissions/miuicamera-permissions.xml
 
 # Description edit
 DEDIT() {
@@ -59,11 +60,9 @@ fi
 if $MIUI; then
   sed -ri "s/name=(.*)/name=\1 for MIUI/" $TMPDIR/module.prop
   PROPFILE=$CUS/MIUI.prop
-  [ -f $DFM ] && rm -f $DFM 2>/dev/null
-  cp -f $DFO $DFM 2>/dev/null # patch miui kthx
+  # Copy device xml from magisk mirror
+  cp -f $DFO $DFM 2>/dev/null 
   BASIC
-  # Weird MemeUi Camera2API file placement
-  cp_ch -r $TMPDIR/$MODID$VEN/etc/permissions $UNITY$SYS/etc/permissions
 else
   sed -ri "s/name=(.*)/name=\1 for AOSP\/LOS/" $TMPDIR/module.prop
   PROPFILE=$CUS/AOSP.prop
@@ -117,7 +116,7 @@ else
     ui_print "- $SYSCAM installed, replacing -"
     DEDIT "Replace MIUI Camera with $MICAM,"
     sed -i "s/true/false/g" $PERMS 2>/dev/null
-    touch $TMPDIR/CAIO$SYS/priv-app/"$SYSCAM"/.replace
+    mktouch $CAIOSYS/priv-app/"$SYSCAM"/.replace
   else
     case $MICAM in
       Mi*) ui_print " ";
@@ -142,7 +141,7 @@ else
 
   # Install MIUI Camera
   # Lib64 has been moved to priv-app due to system stability 
-  cp -f $CUS/"$MICAM".apk $TMPDIR/$MODID$SYS/priv-app/MiuiCamera/MiuiCamera.apk 2>/dev/null
+  cp -f $CUS/$MICAM.apk $CAIOSYS/priv-app/MiuiCamera/MiuiCamera.apk 2>/dev/null
 fi
   
 # MIUI features patching
@@ -182,11 +181,12 @@ ui_print "   Vol+ (No)  /  Vol- (Yes)"
 ui_print " "
 if $VKSEL; then
   # Finale
-  if [ -d $TMPDIR/$MODID$SYS ] || [ -f $DFM ]; then
+  if [ -d $CAIOSYS ] || [ -f $DFM ]; then
     ui_print " "
     ui_print "- Processing $MODID files "
     DEDIT "and patch $DEVCODE.xml"
-    cp_ch -r $TMPDIR/$MODID$SYS $UNITY$SYS
+    $MIUI && cp_ch -r $CAIOSYS/vendor/etc/permissions $UNITY/system/etc/permissions
+    cp_ch -r "$CAIOSYS" "$UNITY$SYS"
     prop_process "$PROPFILE"
   else
     rm -v $UNITY 2>/dev/null
@@ -207,7 +207,7 @@ else
   ui_print "   *  change anything you need                  *"
   ui_print "   **********************************************"
   sed -ri "s/versionCode=(.*)/versionCode=100/" $TMPDIR/module.prop 2>/dev/null
-  sed -ri "s/description=(.*)/description=YOU MAY REFLASH THIS MODULE AGAIN NOW/" $TMPDIR/module.prop
+  sed -ri "s/description=(.*)/description=You may reflash this zip module again/" $TMPDIR/module.prop 2>/dev/null
   #unity_uninstall
   #rm -v $UNITY 2>dev/null
 fi
