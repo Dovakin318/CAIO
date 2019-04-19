@@ -16,13 +16,7 @@ BASIC() {
   ui_print " "
   ui_print "  Extracting $MODID base files..."
   unzip -oq $CUS/Base.zip -d $TMPDIR 2>/dev/null
-  unzip -oq $CUS/device_features.zip -d $CUS 2>/dev/null
-  if [ "$PROPFILE" == $CUS/aosplos.prop ]; then
-    DEDIT "Applied: "
-  else
-    DEDIT "Applied: "
-  fi
-  
+  DEDIT "Applied Google Camera compatibilty, Lens, Photos unlimited backup,"
   ui_print " "
   ui_print "- Disable EIS? -"
   ui_print "  Vol+ (Yes)  /  Vol- (No)"
@@ -34,7 +28,6 @@ BASIC() {
     ui_print "  > EIS Enabled"
     EIS=false
   fi
-  
   ui_print " "
   ui_print "- Disable Gimmick AI (selfie, square and portrait)? -"
   ui_print "  Vol+ (Yes)  /  Vol- (No)"
@@ -64,18 +57,16 @@ else
 fi
 
 if $MIUI; then
-  # Weird MemeUi Camera2API file placement
-  sed -i "s/Mi 6X/$DEVNAME/g" $TMPDIR/custom/miui.prop
   sed -ri "s/name=(.*)/name=\1 for MIUI/" $TMPDIR/module.prop
+  PROPFILE=$CUS/MIUI.prop
+  [ -f $DFM ] && rm -f $DFM 2>/dev/null
+  cp -f $DFO $DFM 2>/dev/null # patch miui kthx
   BASIC
-  DEDIT "Seamless GCam 4K60 recording,"
-  cp -f $DFO $DFM 2>/dev/null
+  # Weird MemeUi Camera2API file placement
   cp_ch -r $TMPDIR/$MODID$VEN/etc/permissions $UNITY$SYS/etc/permissions
-  PROPFILE=$CUS/miui.prop
 else
-  sed -i "s/Mi 6X/$DEVNAME/g" $TMPDIR/custom/aosplos.prop
   sed -ri "s/name=(.*)/name=\1 for AOSP\/LOS/" $TMPDIR/module.prop
-  PROPFILE=$CUS/aosplos.prop
+  PROPFILE=$CUS/AOSP.prop
   BASIC
   
   # Additional AOSP/LOS features
@@ -99,14 +90,14 @@ else
   
   if $GCAM; then
     ui_print " "
-    ui_print "- Additional Google Camera patch available for your $DEVNAME -"
+    ui_print "- Apply 4k60-ish Google Camera video recording? -"
     ui_print "  Vol+ (Skip)  /  Vol- (Apply) "
     ui_print " "
     if $VKSEL; then
-      ui_print "  > Skipped Google Camera patches"
+      ui_print "  > Skipped Additional Google Camera patches"
       GCAM=false
     else
-      ui_print "  > Applied Google Camera patches"
+      ui_print "  > Applied Additional Google Camera patches"
       GCAM=true
     fi
   else
@@ -126,51 +117,45 @@ else
     ui_print "- $SYSCAM installed, replacing -"
     DEDIT "Replace MIUI Camera with $MICAM,"
     sed -i "s/true/false/g" $PERMS 2>/dev/null
-    mktouch $UNITY$SYS/priv-app/"$SYSCAM"/.replace
+    touch $TMPDIR/CAIO$SYS/priv-app/"$SYSCAM"/.replace
   else
-    DEDIT "Install MIUI Camera from $MICAM,"
     case $MICAM in
       Mi*) ui_print " ";
            ui_print "  [Note]: MANUALLY assign ($MICAM) MIUI Camera permission";
            sleep 3;;
     esac
+    DEDIT "Install MIUI Camera from $MICAM,"
   fi
   
   # AOSP Installations
   unzip -oq $CUS/AOSP.zip -d $TMPDIR 2>/dev/null
-  unzip -oq $CUS/lib64.zip -d $TMPDIR 2>/dev/null
+  case $DEVCODE in
+     jasmine*) unzip -oq $CUS/jasmine_sprout.zip -d $TMPDIR/$MODID 2>/dev/null;;
+  esac
+  unzip -oq $CUS/"$DEVCODE".zip -d $TMPDIR/$MODID 2>/dev/null
   
   # Additional Google Camera patches
   if $GCAM; then
-    DEDIT "Seamless GCam 4k60 video recording,"
+    DEDIT "4k60-ish video recording,"
     unzip -oq $CUS/GCam.zip -d $TMPDIR/$MODID 2>/dev/null
-  fi
-  
-  # Device specific patches
-  if [ -f $CUS/"$DEVCODE".zip ]; then
-    unzip -oq $CUS/"$DEVCODE".zip -d $TMPDIR/$MODID 2>/dev/null
-  else
-    case $DEVCODE in
-     jasmine) unzip -oq $CUS/jasmine_sprout.zip -d $TMPDIR/$MODID 2>/dev/null;;
-    esac
   fi
 
   # Install MIUI Camera
   # Lib64 has been moved to priv-app due to system stability 
-  cp_ch $CUS/"$MICAM".apk $UNITY$SYS/priv-app/MiuiCamera/MiuiCamera.apk
+  cp -f $CUS/"$MICAM".apk $TMPDIR/$MODID$SYS/priv-app/MiuiCamera/MiuiCamera.apk 2>/dev/null
 fi
   
 # MIUI features patching
 [ ! -f $DFM ] && abort "  ! $DEVCODE.xml not found !"
+
 ui_print " "
 ui_print "- Patching $DEVNAME MIUI features -"
 while read -r NAME VAL; do 
 # UnFaedah vars
-OVAL=$(cat $DFM | grep -nw "$NAME" | cut -d'>' -f2 | cut -d'<' -f1 | head -n1)
-ONUM=$(cat $DFM | grep -nw "$NAME" | cut -d':' -f1 | head -n1)
+local OVAL=$(cat $DFM | grep -nw "$NAME" | cut -d'>' -f2 | cut -d'<' -f1 | head -n1)
+local ONUM=$(cat $DFM | grep -nw "$NAME" | cut -d':' -f1 | head -n1)
   case $OVAL in
-    $VAL) continue;;
-          #ui_print " Exist  : $NAME = [$VAL]";
+    $VAL) continue;; #ui_print " Exist  : $NAME = [$VAL]"; 
   esac
   if [ -n "$OVAL" ]; then
     #ui_print " Changed: $NAME -- [$OVAL] => [$VAL]"
@@ -178,8 +163,8 @@ ONUM=$(cat $DFM | grep -nw "$NAME" | cut -d':' -f1 | head -n1)
     sed -ri "$(($ONUM - 1)) s/<!--(.*)/<!-- $MODID changed \"$OVAL\" to \"$VAL\" -->/" $DFM
   else
     #ui_print " Added  : $NAME -- [$VAL]"
-    sed -i "/<features>/ a\    <bool name=\"$NAME\">$VAL</bool>" $DFM
     sed -i "/<features>/ a\    <!-- $MODID added $NAME -->" $DFM
+    sed -i "/<features>/ a\    <bool name=\"$NAME\">$VAL</bool>" $DFM
   fi
 done <"$CUS/features.txt"
 
@@ -187,8 +172,7 @@ if $EIS; then
     DEDIT "Disable EIS,"
 else
     DEDIT "Enable EIS,"
-    sed -i "s/eis.enable=0/eis.enable=1/g" $CUS/aosplos.prop
-    sed -i "s/eis.enable=0/eis.enable=1/g" $CUS/miui.prop
+    sed -i "s/eis.enable=0/eis.enable=1/g" $PROPFILE
 fi
 
 # Version downgrade in case we need to change features
@@ -197,6 +181,18 @@ ui_print "   Do you need to change $MODID options?"
 ui_print "   Vol+ (No)  /  Vol- (Yes)"
 ui_print " "
 if $VKSEL; then
+  # Finale
+  if [ -d $TMPDIR/$MODID$SYS ] || [ -f $DFM ]; then
+    ui_print " "
+    ui_print "- Processing $MODID files "
+    DEDIT "and patch $DEVCODE.xml"
+    cp_ch -r $TMPDIR/$MODID$SYS $UNITY$SYS
+    prop_process "$PROPFILE"
+  else
+    rm -v $UNITY 2>/dev/null
+    abort "! Failed to extract files"
+  fi
+  ui_print " "
   ui_print "   **********************************************"
   ui_print "   *           [!!] IF BOOTLOOP [!!]            *"
   ui_print "   **********************************************"
@@ -205,20 +201,14 @@ if $VKSEL; then
   ui_print "   **********************************************"
   sleep 5
 else
+  ui_print " "
+  ui_print "   **********************************************"
   ui_print "   *  Now you can reflash this zip again and    *"
   ui_print "   *  change anything you need                  *"
+  ui_print "   **********************************************"
   sed -ri "s/versionCode=(.*)/versionCode=100/" $TMPDIR/module.prop 2>/dev/null
-fi
-
-# Finale
-if [ -d $TMPDIR/$MODID$SYS ] || [ -f $DFM ]; then
-  ui_print " "
-  ui_print "- Processing $MODID files "
-  DEDIT "and patch $DEVCODE MIUI features."
-  cp_ch -r $TMPDIR/$MODID$SYS $UNITY$SYS
-  prop_process "$PROPFILE"
-else
-  unity_uninstall
-  abort "! Failed to extract files"
+  sed -ri "s/description=(.*)/description=YOU MAY REFLASH THIS MODULE AGAIN NOW/" $TMPDIR/module.prop
+  #unity_uninstall
+  #rm -v $UNITY 2>dev/null
 fi
 ui_print " "
