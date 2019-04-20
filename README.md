@@ -37,9 +37,13 @@ _AOSP/LOS_
 - TadiT7 @ github
 
 # Changes
+2019-04-20 (158)
+- (AOSP) Moved model_back.dlc from wayne to AOSP
+- (MIUI) Corrected original ROM device features xml copying
+
 2019-04-19 (157)
 - (wayne) Removed placebo libs 
-- (MIUI) Missed _device_features_ path
+- (MIUI) Missed device_features path
 
 2019-04-18 (156)
 - Correct miss-called props

@@ -46,8 +46,8 @@ unity_custom() {
   # Supported devices
   case $DEVCODE in
    jasmine*) LANJUT=true;;
-      tulip) LANJUT=true; GCAM=true;;
-      wayne) LANJUT=true; GCAM=true;;
+      tulip) LANJUT=true;;
+      wayne) LANJUT=true;;
      whyred) LANJUT=true; GCAM=true;;
   esac
   

@@ -1,11 +1,11 @@
 # Variables
 CUS=$TMPDIR/custom
-CAIOSYS=$TMPDIR/$MODID/system
+CAIOTMP=$TMPDIR/$MODID/system
 DFO=$ORIGDIR/system/etc/device_features/"$DEVCODE".xml
-DFM=$TMPDIR/$MODID/system/etc/device_features/"$DEVCODE".xml
+DFM=$CAIOTMP/etc/device_features/"$DEVCODE".xml
 ROM=$(grep_prop ro.build.display.id | cut -d'-' -f1)
 SYSCAM=$(find $ORIGDIR/system/priv-app -type d -name "*MiuiCamera*" | head -n1)
-PERMS=$CAIOSYS/etc/default-permissions/miuicamera-permissions.xml
+PERMS=$CAIOTMP/etc/default-permissions/miuicamera-permissions.xml
 
 # Description edit
 DEDIT() {
@@ -13,36 +13,35 @@ DEDIT() {
 }
 
 # Basic patches
-BASIC() {
-  ui_print " "
-  ui_print "  Extracting $MODID base files..."
-  unzip -oq $CUS/Base.zip -d $TMPDIR 2>/dev/null
-  DEDIT "Applied Google Camera compatibilty, Lens, Photos unlimited backup,"
-  ui_print " "
-  ui_print "- Disable EIS? -"
-  ui_print "  Vol+ (Yes)  /  Vol- (No)"
-  ui_print " "
-  if $VKSEL; then
-    ui_print "  > EIS Disabled"
-    EIS=true
-  else
-    ui_print "  > EIS Enabled"
-    EIS=false
-  fi
-  ui_print " "
-  ui_print "- Disable Gimmick AI (selfie, square and portrait)? -"
-  ui_print "  Vol+ (Yes)  /  Vol- (No)"
-  ui_print " "
-  if $VKSEL; then
-    ui_print "  > Gimmick AI disabled"
-  else
-    ui_print "  > Gimmick AI enabled"
-    DEDIT "Gimmick AI,"
-    sed -i '3 s/false/true/' $CUS/features.txt 2>/dev/null
-    sed -i '5 s/false/true/' $CUS/features.txt 2>/dev/null
-    sed -i '10 s/false/true/' $CUS/features.txt 2>/dev/null
-  fi
-}
+ui_print " "
+ui_print "  Extracting $MODID base files..."
+unzip -oq $CUS/Base.zip -d $TMPDIR 2>/dev/null
+DEDIT "Applied Google Camera compatibilty, Lens, Photos unlimited backup,"
+ui_print " "
+ui_print "- Disable EIS? -"
+ui_print "  Vol+ (Yes)  /  Vol- (No)"
+ui_print " "
+if $VKSEL; then
+  ui_print "  > EIS Disabled"
+  EIS=true
+else
+  ui_print "  > EIS Enabled"
+  EIS=false
+fi
+
+ui_print " "
+ui_print "- Disable Gimmick AI (selfie, square and portrait)? -"
+ui_print "  Vol+ (Yes)  /  Vol- (No)"
+ui_print " "
+if $VKSEL; then
+  ui_print "  > Gimmick AI disabled"
+else
+  ui_print "  > Gimmick AI enabled"
+  DEDIT "Gimmick AI,"
+  sed -i '3 s/false/true/' $CUS/features.txt 2>/dev/null
+  sed -i '5 s/false/true/' $CUS/features.txt 2>/dev/null
+  sed -i '10 s/false/true/' $CUS/features.txt 2>/dev/null
+fi
 
 ui_print " "
 ui_print "- Detecting ROM -"
@@ -60,13 +59,10 @@ fi
 if $MIUI; then
   sed -ri "s/name=(.*)/name=\1 for MIUI/" $TMPDIR/module.prop
   PROPFILE=$CUS/MIUI.prop
-  # Copy device xml from magisk mirror
-  cp -f $DFO $DFM 2>/dev/null 
-  BASIC
+  cp -f $DFO $DFM 2>/dev/null
 else
   sed -ri "s/name=(.*)/name=\1 for AOSP\/LOS/" $TMPDIR/module.prop
   PROPFILE=$CUS/AOSP.prop
-  BASIC
   
   # Additional AOSP/LOS features
   ui_print " "
@@ -86,27 +82,10 @@ else
   fi
   ui_print " "
   ui_print "  > MIUI Camera from $MICAM selected -"
-  
-  if $GCAM; then
-    ui_print " "
-    ui_print "- Apply 4k60-ish Google Camera video recording? -"
-    ui_print "  Vol+ (Skip)  /  Vol- (Apply) "
-    ui_print " "
-    if $VKSEL; then
-      ui_print "  > Skipped Additional Google Camera patches"
-      GCAM=false
-    else
-      ui_print "  > Applied Additional Google Camera patches"
-      GCAM=true
-    fi
-  else
-    # in case aja
-    GCAM=false
-  fi
   # End of AOSP/LOS selection
   
   # Find system MIUI Camera
-  # Some ROM uses different priv-app folder, this unf is the answer.
+  # Some ROM may use different priv-app miui camera folder name.
   if [ -d "$SYSCAM" ]; then
     case $BOOTMODE in
       true) SYSCAM=$(echo $SYSCAM | cut -d'/' -f7);;
@@ -116,32 +95,41 @@ else
     ui_print "- $SYSCAM installed, replacing -"
     DEDIT "Replace MIUI Camera with $MICAM,"
     sed -i "s/true/false/g" $PERMS 2>/dev/null
-    mktouch $CAIOSYS/priv-app/"$SYSCAM"/.replace
+    mktouch $UNITY/system/priv-app/"$SYSCAM"/.replace
   else
     case $MICAM in
       Mi*) ui_print " ";
            ui_print "  [Note]: MANUALLY assign ($MICAM) MIUI Camera permission";
            sleep 3;;
     esac
-    DEDIT "Install MIUI Camera from $MICAM,"
+    DEDIT  "Install MIUI Camera from $MICAM,"
   fi
   
   # AOSP Installations
-  unzip -oq $CUS/AOSP.zip -d $TMPDIR 2>/dev/null
+  unzip -oq $CUS/AOSP.zip -d $CAIOTMP 2>/dev/null
   case $DEVCODE in
-     jasmine*) unzip -oq $CUS/jasmine_sprout.zip -d $TMPDIR/$MODID 2>/dev/null;;
+     jasmine*) unzip -oq $CUS/jasmine_sprout.zip -d $CAIOTMP 2>/dev/null;;
   esac
-  unzip -oq $CUS/"$DEVCODE".zip -d $TMPDIR/$MODID 2>/dev/null
+  unzip -oq $CUS/"$DEVCODE".zip -d $CAIOTMP 2>/dev/null
   
-  # Additional Google Camera patches
   if $GCAM; then
-    DEDIT "4k60-ish video recording,"
-    unzip -oq $CUS/GCam.zip -d $TMPDIR/$MODID 2>/dev/null
+    ui_print " "
+    ui_print "- Apply 4k60-ish Google Camera video recording? -"
+    ui_print "  Vol+ (Skip)  /  Vol- (Apply) "
+    ui_print " "
+    if $VKSEL; then
+      ui_print "  > Additional Google Camera patch not applied"
+      GCAM=false
+    else
+      ui_print "  > Additional Google Camera patch applied"
+      DEDIT "4k60-ish video recording,"
+      unzip -oq $CUS/GCam.zip -d $CAIOTMP 2>/dev/null
+    fi
   fi
-
+  
   # Install MIUI Camera
   # Lib64 has been moved to priv-app due to system stability 
-  cp -f $CUS/$MICAM.apk $CAIOSYS/priv-app/MiuiCamera/MiuiCamera.apk 2>/dev/null
+  cp_ch -i $CUS/"$MICAM".apk $UNITY/system/priv-app/MiuiCamera/MiuiCamera.apk 2>/dev/null
 fi
   
 # MIUI features patching
@@ -181,12 +169,12 @@ ui_print "   Vol+ (No)  /  Vol- (Yes)"
 ui_print " "
 if $VKSEL; then
   # Finale
-  if [ -d $CAIOSYS ] || [ -f $DFM ]; then
+  if [ -d $CAIOTMP ] || [ -f $DFM ]; then
     ui_print " "
     ui_print "- Processing $MODID files "
     DEDIT "and patch $DEVCODE.xml"
-    $MIUI && cp_ch -r $CAIOSYS/vendor/etc/permissions $UNITY/system/etc/permissions
-    cp_ch -r "$CAIOSYS" "$UNITY$SYS"
+    $MIUI && cp_ch -r $CAIOTMP/vendor/etc/permissions $UNITY/system/etc/permissions
+    cp_ch -r "$CAIOTMP" "$UNITY"/system
     prop_process "$PROPFILE"
   else
     rm -v $UNITY 2>/dev/null
