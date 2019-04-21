@@ -41,13 +41,13 @@ unity_custom() {
   DEVNAME=$(grep_prop ro.product.model)
   DEVCODE=$(grep_prop ro.build.product)
   LANJUT=false
-  ANCIENT=false
+  GCAM=false
   
   # Supported devices
   case $DEVCODE in
    jasmine*) LANJUT=true;;
-      tulip) LANJUT=true;;
-      wayne) LANJUT=true;;
+      tulip) LANJUT=true; GCAM=true;;
+      wayne) LANJUT=true; GCAM=true;;
      whyred) LANJUT=true; GCAM=true;;
   esac
   
@@ -60,7 +60,7 @@ unity_custom() {
   if $MAGISK || $LANJUT; then
       ui_print " "
       ui_print "- Your $DEVNAME ($DEVCODE) is supported"
-      sed -i "s/UnF/$DEVNAME/g" $TMPDIR/module.prop
+      sed -i "s/SDM660/$DEVNAME/g" $TMPDIR/module.prop
   else
       abort "  ! Your $DEVNAME ($DEVCODE) is not supported"
   fi

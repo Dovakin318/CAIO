@@ -1,54 +1,56 @@
 # Description
-Various camera patch for Mi 6X (wayne), Mi A2 (jasmine_sprout), Redmi Note 5/Pro/AI (whyred), or Redmi Note 6 (tulip) running MIUI or AOSP/LOS based ROM.
+Various camera patch for Xiaomi SDM660 running MIUI or AOSP/LOS based ROM.
 
+# Compatibilty
+- Mi 6X (wayne)
+  - MIUI & AOSP/LOS
+- Mi A2 (jasmine_sprout)
+  - AOSP/LOS (Not recommended on Stock)
+- Redmi Note 5 (whyred)
+  - MIUI & AOSP/LOS
+- Redmi Note 6 (tulip)
+  - MIUI & AOSP/LOS
+ 
 # Features
-_Basic - included in both MIUI and AOSP/LOS)_
-- Google Camera compatibility
-- Disable or Enable EIS
-- Patch MIUI features
-- Gimmick AI (selfie, square, and portrait)
-- Google Photo unlimited original backup until Feb. 1st 2022
-- Systemlessly install Google Lens
+## Basic
+- Camera2 API compatibility
+- (En/dis)able EIS
+- Unlimited Google Photo original backup until Feb. 1st 2022
+- Gimmick AI Camera (selfie, square, and portrait)
+- Patch MIUI hidden features
 
-_MIUI_
-- Regular MIUI vendor properties for Google Camera.
+## MIUI
+- Weird Camera2API
 
-_AOSP/LOS_
-- Install or replace MIUI Camera
-- Select between MIUI Camera V2 from part7 by Hadinata, Stock Mi A2, or Stock Mi A1
-- Additional Google Camera 4K60-ish video recording (only for tulip, wayne, and whyred)
-- Device specific patch
-  - Mi 6X (wayne)
-    - model_back.dlc from MIUI to prevent _cannot connect to camera_ on MIUI Camera;
-
-  - Mi A2 (jasmine_sprout)
-    - N/A
-
-  - Redmi Note 5 (whyred)
-    - N/A
-
-  - Redmi Note 6 (tulip)
-    - N/A
+## AOSP/LOS
+- Install/replace MIUI Camera, select between Stock Mi A2, AI Part 7 or AI Part 8
+- Google Camera 4K60-ish video recording (not available for Mi A2)
 
 # Credits
 - topjohnwu @ Magisk
-- ahrion @ Unity
-- Hadinata @ Ancient Family
+- ahrion & zackptg5 @ Unity
 - TadiT7 @ github
+- Hadinata & ANCIENT Family
 
-# Changes
-2019-04-20 (158)
+# Changelog
+
+## 2019-04-21 (160)
+- Regular shells error corrections
+- Various system.prop modifications
+- Replace Mi A1 apk with AI Camera from AI Part 8 by Hadinata
+
+## 2019-04-20 (158)
 - (AOSP) Moved model_back.dlc from wayne to AOSP
 - (MIUI) Corrected original ROM device features xml copying
 
-2019-04-19 (157)
-- (wayne) Removed placebo libs 
+## 2019-04-19 (157)
+- (wayne) Removed placebo libs
 - (MIUI) Missed device_features path
 
-2019-04-18 (156)
+## 2019-04-18 (156)
 - Correct miss-called props
 - Clean up unused vars and commands
 - (wayne) Added few placebo libs from Mi A2
 
-2019-04-18
-- Aproved by magisk
+## 2019-04-18
+- Aproved by Magisk
