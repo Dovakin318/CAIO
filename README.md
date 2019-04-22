@@ -2,6 +2,7 @@
 Various camera patch for Xiaomi SDM660 running MIUI or AOSP/LOS based ROM.
 
 # Compatibilty
+- Magisk 18.1+
 - Mi 6X (wayne)
   - MIUI & AOSP/LOS
 - Mi A2 (jasmine_sprout)
@@ -29,15 +30,32 @@ Various camera patch for Xiaomi SDM660 running MIUI or AOSP/LOS based ROM.
 # Credits
 - topjohnwu @ Magisk
 - ahrion & zackptg5 @ Unity
-- TadiT7 @ github
+- MIUI @ Xiaomi
 - Hadinata & ANCIENT Family
+- TadiT7 @ Github
+- Manish4586, rcstar6696, rebenok90x, mracar, balazs312 @ Mi A2/6X Community
+- John Fawkes
+- Stallix
 
 # Changelog
+## 2019-04-22 (161)
+### Basic
+- Add option to remove Pixel 3XL sysconfig (Google Photo disguise)
+- (whyred) Add AIpart8 module camera blobs mixups by Hadinata & ANCIENT Family
+- (whyred props) change camera.is_mode to 4
+- (whyred props) change camera.is_type to 4
+- (whyred props) change camera.stats.test to 5
+
+### AOSP/LOS
+- Add model_front.dlc from wayne 9.4.14 dump TadiT7 @ github
+- (MIUI Camera) Rename priv-app name with MemeCamera
+- (MIUI Camera) Replace some libs with AI Part 8 libs by Hadinata @ ANCIENT Family
+- (Replacer) Change _mktouch_ with create found Miui Camera directory along with _.replace_ file into it
+- (wayne) Add few placebo vendor camera blobs
 
 ## 2019-04-21 (160)
 - Regular shells error corrections
 - Various system.prop modifications
-- Replace Mi A1 apk with AI Camera from AI Part 8 by Hadinata
 
 ## 2019-04-20 (158)
 - (AOSP) Moved model_back.dlc from wayne to AOSP

@@ -33,7 +33,7 @@ print_modname() {
 }
 
 set_permissions() {
- : #oof
+  $MAGISK && set_perm_recursive $UNITY 0 0 0755 0644
 }
 
 unity_custom() {

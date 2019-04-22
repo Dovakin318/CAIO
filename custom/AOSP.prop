@@ -11,41 +11,48 @@ persist.camera.display.lmax=1280x720
 # System property determining camera HAL used for video call
 persist.radio.VT_CAM_INTERFACE=2
 
-# Forced HAL1 and aux packages
-camera.hal1.packagelist=com.whatsapp,com.facebook.katana,com.gbwhatsapp,com.gbinsta
-camera.aux.packagelist=org.codeaurora.snapcam,com.android.camera,com.google.android.GoogleCamera,com.qualcomm.qti.qmmi
+# Enable low power video recording
 camera.lowpower.record.enable=1
 
-# System property for advanced camera features
+# Forced HAL1 and AUX packages
+camera.hal1.packagelist=com.whatsapp,com.facebook.katana,com.gbwhatsapp,com.gbinsta
+camera.aux.packagelist=org.codeaurora.snapcam,com.android.camera,com.google.android.GoogleCamera,com.qualcomm.qti.qmmi
+
+# Additional vendor AUX packages
+vendor.camera.aux.packagelist=org.codeaurora.snapcam,com.android.camera,com.google.android.GoogleCamera,com.qualcomm.qti.qmmi
+
+# Advanced multi camera features
 persist.camera.enableAdvanceFeatures=0x3E7
 persist.camera.mfnrframenum=8
 persist.camera.multicam=TRUE
 persist.camera.multicam.hwsync=TRUE
 persist.camera.multicam.fpsmatch=TRUE
 persist.camera.multicam.framesync=1
+persist.camera.max.previewfps=60
 persist.camera.auxswitch.threshold=330
 persist.camera.mainswitch.threshold=419
 persist.bokeh.switch.lux=360
-persist.camera.max.previewfps=60
+
+# Dual camera
 persist.camera.awb.sync=2
+persist.camera.expose.aux=1
+persist.camera.depth.focus.cb=0
 persist.camera.fdvideo=1
+persist.camera.imglib.usefdlite=1
 persist.camera.is_type=5
 persist.camera.is_mode=5
-persist.camera.stats.test=5
-persist.camera.imglib.usefdlite=1
+persist.camera.isp.clock.optmz=0
+persist.camera.isp.turbo=1
+persist.camera.linkpreview=0
 persist.camera.llnoise=1
+persist.camera.preview.ubwc=0
+persist.camera.stats.test=0
 persist.camera.tnr_cds=1
 persist.camera.tnr.video=1
 persist.camera.tnr.preview=1
 persist.camera.tnr.snapshot=1
-persist.tnr.process.plates=2
-persist.denoise.process.plates=2
-persist.camera.expose.aux=1
-persist.camera.preview.ubwc=0
-persist.camera.depth.focus.cb=0
-persist.camera.isp.clock.optmz=0
-persist.camera.linkpreview=0
-persist.camera.isp.turbo=1
+persist.denoise.process.plates=6
+persist.tnr.process.plates=3
 
 # HAL3 & EIS
 persist.camera.HAL3.enabled=1
@@ -56,7 +63,8 @@ persist.imx376_sunny.low.lux=290
 persist.imx376_sunny.light.lux=275
 persist.imx376_ofilm.low.lux=290
 persist.imx376_ofilm.light.lux=275
-# whyred x tulip
+
+# whyred x tulip lux
 persist.ov13855_sunny.low.lux=385
 persist.ov13855_sunny.light.lux=370
 persist.s5k3l8_ofilm.low.lux=379
@@ -65,7 +73,3 @@ persist.s5k3l8_ofilm.light.lux=367
 # Exif info
 persist.camera.exif.make=Xiaomi
 persist.camera.exif.model=Mi 6X
-
-# Additional vendor HAL1 and aux packages
-vendor.camera.hal1.packagelist=com.android.camera,com.whatsapp,com.facebook.katana,com.gbwhatsapp,com.gbinsta
-vendor.camera.aux.packagelist=org.codeaurora.snapcam,com.android.camera,com.google.android.GoogleCamera,com.qualcomm.qti.qmmi
